@@ -196,6 +196,7 @@ public class Imap extends CordovaPlugin {
     private static JSONArray getTextFromMimeMultipart(Object body, String contentType) {
         try {
             JSONArray fullContent = new JSONArray();
+            boolean multiImages = true;
 
             if (body.getClass().equals(String.class)) {
                 JSONObject contentData = new JSONObject();
@@ -208,23 +209,31 @@ public class Imap extends CordovaPlugin {
                 MimeMultipart mimeMultipart = (MimeMultipart) body;
 
                 int count = mimeMultipart.getCount();
-
+                JSONObject contentData = new JSONObject();
+                Log.i("MY_DATA", "mimeMultipart.getCount() : "+count);
                 for (int i = 0; i < count; i++) {
-                    JSONObject contentData = new JSONObject();
 
+                    Log.i("MY_DATA", "First For loop i : "+i);
                     BodyPart bodyPart = mimeMultipart.getBodyPart(i);
                     if (bodyPart.isMimeType("text/plain")) {
+                        Log.i("MY_DATA", " First If Called");
                         contentData.put("type", "text/plain");
                         contentData.put("content", bodyPart.getContent());
                     } else if (bodyPart.isMimeType("text/html")) {
+                        Log.i("MY_DATA", " First Else If Called");
                         contentData.put("type", "text/html");
                         contentData.put("content", bodyPart.getContent());
-                    } else if (bodyPart.getContent() instanceof MimeMultipart) {
+                    }
+                    else if (bodyPart.getContent() instanceof MimeMultipart) {
+                        Log.i("MY_DATA", " SECOND Else If Called");
+                        fullContent = getTextFromMimeMultipart((Object) bodyPart.getContent(), contentType);
+                        contentData = new JSONObject();
                         if (bodyPart.getContent() instanceof Multipart) {
 
                             Multipart multipart = (Multipart) body;
 
                             for (int j = 0; j < multipart.getCount(); j++) {
+                                JSONObject dataObject1 = new JSONObject();
                                 Part part = multipart.getBodyPart(j);
                                 String disposition = part.getDisposition();
 
@@ -234,21 +243,44 @@ public class Imap extends CordovaPlugin {
                                     MimeBodyPart mimeBodyPart = (MimeBodyPart) part;
                                     String fileName = mimeBodyPart.getFileName();
 
-                                    contentData.put("type", mimeBodyPart.getContentType());
-                                    contentData.put("fileName", fileName);
-                                    contentData.put("content", mimeBodyPart);
+                                    // Read the content of the attachment as an InputStream
+                                    InputStream attachmentInputStream = mimeBodyPart.getInputStream();
+
+                                    // Encode the content in base64
+                                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                                    byte[] buffer = new byte[1024];
+                                    int bytesRead;
+                                    while ((bytesRead = attachmentInputStream.read(buffer)) != -1) {
+                                        byteArrayOutputStream.write(buffer, 0, bytesRead);
+                                    }
+                                    byte[] base64Content = byteArrayOutputStream.toByteArray();
+
+                                    dataObject1.put("type", mimeBodyPart.getContentType());
+                                    dataObject1.put("fileName", fileName);
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        dataObject1.put("content", Base64.getEncoder().encodeToString(base64Content));
+                                    }
+
+                                    multiImages = false;
+                                    fullContent.put(dataObject1);
                                 }
+
+                                Log.i("MY_DATA", " multipart.getCount() : "+multipart.getCount() +" fullContent : "+fullContent);
                             }
                         }
 
-                        fullContent = getTextFromMimeMultipart((Object) bodyPart.getContent(), contentType);
+                        Log.i("MY_DATA", " SECOND Else If Called for loop finish contentData length "+contentData.length() );
+                        Log.i("MY_DATA", "Just fullContent again put content: "+fullContent);
+
                     }
 
-                    if (contentData.length() > 0) {
+                    if (contentData.length() > 0 && multiImages) {
                         fullContent.put(contentData);
                     }
                 }
             }
+
+            Log.i("MY_DATA", "After For loop fullContent : "+fullContent);
 
             return fullContent;
         } catch (Exception ex) {

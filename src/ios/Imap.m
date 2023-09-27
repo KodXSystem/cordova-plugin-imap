@@ -265,11 +265,13 @@ MCOIMAPSession *session;
             MCOIMAPMessagesRequestKind request = (MCOIMAPMessagesRequestKindHeaders | MCOIMAPMessagesRequestKindFlags | MCOIMAPMessagesRequestKindInternalDate);
 
             int rangeLength = (endLocation - startLocation);
-            MCOIndexSet *uids = [MCOIndexSet indexSetWithRange:MCORangeMake(startLocation, rangeLength)];
+            rangeLength -= 1;
+            MCOIndexSet *numbers = [MCOIndexSet indexSetWithRange:MCORangeMake(startLocation - rangeLength, rangeLength)];
+            MCOIMAPFolderInfoOperation *folderInfo = [session folderInfoOperation:folderName];
 
-            MCOIMAPFetchMessagesOperation *fetchOperation = [session fetchMessagesOperationWithFolder:folderName
+            MCOIMAPFetchMessagesOperation *fetchOperation = [session fetchMessagesByNumberOperationWithFolder:folderName
                                                                                           requestKind:request
-                                                                                                 uids:uids];
+                                                                                                 numbers:numbers];
 
             [fetchOperation start:^(NSError *error, NSArray *fetchedMessages, MCOIndexSet *vanishedMessages) {
 
@@ -519,6 +521,7 @@ MCOIMAPSession *session;
     MCOConnectionType imapConnectionType = (connectionType == nil) ? MCOConnectionTypeTLS : [Imap parseConnectionType:connectionType];
 
     MCOIMAPSession *imapSession = [[MCOIMAPSession alloc] init];
+    imapSession.voIPEnabled = false;
     imapSession.hostname = host;
     imapSession.port = port;
     imapSession.username = user;
@@ -657,20 +660,33 @@ MCOIMAPSession *session;
         })];
 
         for (MCOAttachment *atachmentPart in message.attachments) {
+            // Read the content of the attachment as NSData
+                NSData *attachmentData = atachmentPart.data;
+
+                // Encode the content in base64
+                NSString *base64Content = [attachmentData base64EncodedStringWithOptions:0];
 
             [fullContent addObject:(@{
-                    @"type": atachmentPart.mimeType,
-                    @"fileName": atachmentPart.filename
+                    @"type": atachmentPart.mimeType, 
+                    @"fileName": atachmentPart.filename,
+                    @"content": base64Content
             })];
         }
 
         for (MCOAttachment *htmlAtachement in message.htmlInlineAttachments) {
+            // Read the content of the attachment as NSData
+                NSData *htmlData = htmlAtachement.data;
+
+                // Encode the content in base64
+                NSString *base64Content = [htmlData base64EncodedStringWithOptions:0];
 
             [fullContent addObject:(@{
                     @"type": htmlAtachement.mimeType,
-                    @"fileName": htmlAtachement.filename
+                    @"fileName": htmlAtachement.filename,
+                    @"content": base64Content
             })];
         }
+        
 
         return fullContent;
     } @catch (NSException *exception) {
