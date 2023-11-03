@@ -266,8 +266,7 @@ MCOIMAPSession *session;
 
             int rangeLength = (endLocation - startLocation);
             rangeLength -= 1;
-            MCOIndexSet *numbers = [MCOIndexSet indexSetWithRange:MCORangeMake(startLocation - rangeLength, rangeLength)];
-            MCOIMAPFolderInfoOperation *folderInfo = [session folderInfoOperation:folderName];
+            MCOIndexSet *numbers = [MCOIndexSet indexSetWithRange:MCORangeMake(endLocation - rangeLength, rangeLength)];
 
             MCOIMAPFetchMessagesOperation *fetchOperation = [session fetchMessagesByNumberOperationWithFolder:folderName
                                                                                           requestKind:request

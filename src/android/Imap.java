@@ -1,13 +1,19 @@
+import android.os.Build;
+import android.util.Log;
+
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 
 import org.apache.cordova.PluginResult.Status;
 import org.apache.cordova.PluginResult;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Properties;
 import java.util.Date;
 import java.util.Properties;
@@ -38,7 +44,6 @@ import javax.mail.search.SearchTerm;
 import javax.mail.BodyPart;
 import javax.mail.Header;
 import javax.mail.Flags;
-
 
 public class Imap extends CordovaPlugin {
 
