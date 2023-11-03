@@ -24,8 +24,8 @@
         <config-file parent="/*" target="AndroidManifest.xml">
             <uses-permission android:name="android.permission.INTERNET" />
         </config-file>
-        <framework src="com.sun.mail:android-mail:1.6.2" />
-        <framework src="com.sun.mail:android-activation:1.6.2" />
+        <framework src="com.sun.mail:android-mail:1.6.7" />
+        <framework src="com.sun.mail:android-activation:1.6.7" />
         <source-file src="src/android/Imap.java" target-dir="src/cordova-plugin-imap/Imap" />
     </platform>
 
